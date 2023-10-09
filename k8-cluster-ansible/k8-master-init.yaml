@@ -1,0 +1,30 @@
+- hosts: masters
+  remote_user: ubuntu
+  become: yes
+  become_method: sudo
+  become_user: root
+  gather_facts: yes
+  connection: ssh
+
+  tasks:
+    - name: Start the cluster
+      command: kubeadm init --pod-network-cidr=10.0.0.0/16 --apiserver-advertise-address 172.31.59.187 --ignore-preflight-errors NumCPU,Mem 
+      
+    - name: create .kube directory
+      command: mkdir -p /root/.kube
+
+    - name: copy admin.conf to user's kube config
+      command: sudo cp -i /etc/kubernetes/admin.conf /root/.kube/config
+
+    - name: changing permission.
+      command: sudo chown root:root /root/.kube/config
+
+    - pause: seconds=80
+
+    - name: the containerd package && installing
+      shell:
+        cmd: |
+          cd /home/ubuntu
+          wget https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/calico.yaml
+          kubectl apply -f calico.yaml
+
